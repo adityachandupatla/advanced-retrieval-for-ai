@@ -1,0 +1,25 @@
+
+BERT (Bidirectional Encoder Representations from Transformers)
+
+	For every given token we output a dense vector. Therefore for a sentence we will have a set of dense vectors as output
+
+Sentence Transformer
+
+	Along with BERT we add a pooling layer which will combine all dense vectors into a single dense vector
+
+Pitfalls of retrieval
+
+	Base Idea: Effectively we are trying to perform an efficient N-dimensional search for retrieving relevant context for user-query
+
+	1. To avoid retrieving irrelevant context (as part of nearest neighbor search), make sure that the query itself has relevant context or some kind of pre-processing done
+
+	2. Other approach is to let the LLM answer the query without any context. Then take that answer along with the query and retrieve relevant context from your vectorDB. This way, you will increase your likelihood of finding relevant neighbors. The retrieved results can be appended to the query along with the initial LLM answer and then fed to the LLM again for a final answer
+
+	3. Similar to (2), but instead of generating an answer we ask the LLM to generate additional queries.
+
+	4. Out of all the retrieved results from vectorDB we can rank them and only send the top K to the LLM model as surrounding context. This allows the LLM to have limited information and provide targeted answer. Ranking can be accomplished through cross-encoder. A cross-encoder is a neural network which takes in the user query along with retrieved documents (one document at a time) and outputs a score.
+
+Alternative to PCA is UMAP
+
+	UMAP (Uniform Manifold Approximation and Projection) is a nonlinear dimensionality reduction library in Python that builds a high-dimensional graph of data and optimizes a low-dimensional representation preserving both local and some global structure, making it effective for visualizing clusters and complex manifolds. Unlike PCA (Principal Component Analysis), which is a linear technique projecting data onto orthogonal axes maximizing variance (and assumes global linearity), UMAP captures nonlinear relationships, can preserve local neighborhoods better, and is often superior for visualization of high-dimensional datasets (e.g., embeddings) though it lacks PCA’s interpretability, deterministic output, and direct invertibility.
+
