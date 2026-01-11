@@ -1,11 +1,50 @@
 
 BERT (Bidirectional Encoder Representations from Transformers)
 
-	For every given token we output a dense vector. Therefore for a sentence we will have a set of dense vectors as output
+	For every given token we output a dense vector. Therefore for a sentence we will have a set of dense vectors as output.
+
+	BERT processes text bidirectionally—it looks at words both before and after each token simultaneously (unlike GPT which only looks left-to-right).
+
+	What it outputs: For an input like "The cat sat", BERT produces one 768-dimensional vector per token. So you get 3 vectors, each capturing that token's meaning in context. The vector for "cat" encodes not just "cat" but "cat in this specific sentence."
+
+	The problem: If you want to compare two sentences for similarity, you have mismatched shapes. Sentence A might have 5 vectors, Sentence B might have 12. You can't directly compute cosine similarity between them.
+
+	Naive workarounds (that work poorly):
+	- Average all token vectors → loses too much information
+	- Use the [CLS] token's vector → BERT wasn't trained for this, so it's not semantically meaningful for similarity
+
+	Bi-encoder (Sentence Transformer):
+
+		Query  → Encoder → vector₁  ─┐
+		                              ├─→ cosine_similarity(v₁, v₂)
+		Doc    → Encoder → vector₂  ─┘
+
+		Query and document are encoded independently. Fast, but no direct interaction between them.
+
+	Cross-encoder:
+
+		[CLS] Query [SEP] Document [SEP]  → BERT → score (0-1)
+
+		Query and document are concatenated and processed together. Every token in the query attends to every token in the document. Much richer interaction, but you can't precompute document embeddings—you must run inference for every (query, doc) pair.
+
+	How is BERT trained?
+
+		Masked Language Modeling (MLM) - Randomly mask 15% of tokens, make BERT predict them.
+
+			Input:  "The cat [MASK] on the mat"
+			Target: "sat"
+
+		This forces BERT to build contextual understanding—it can't just memorize, it must understand relationships between words.
 
 Sentence Transformer
 
-	Along with BERT we add a pooling layer which will combine all dense vectors into a single dense vector
+	Along with BERT we add a pooling layer which will combine all dense vectors into a single dense vector.
+
+	Takes BERT (or similar) and adds a pooling layer that intelligently combines all token vectors into one fixed-size vector per sentence.
+
+	Key difference: The entire model is fine-tuned on sentence similarity tasks (using contrastive learning with sentence pairs). So the pooling isn't just slapped on—the underlying BERT weights are adjusted so that the pooled output is actually meaningful for comparing sentences.
+
+	Result: "The cat sat" → single 768-dim vector that you can directly compare with any other sentence's vector via cosine similarity. This is why sentence-transformers models work well for semantic search, clustering, etc., while raw BERT doesn't.
 
 Pitfalls of retrieval
 
@@ -18,6 +57,10 @@ Pitfalls of retrieval
 	3. Similar to (2), but instead of generating an answer we ask the LLM to generate additional queries.
 
 	4. Out of all the retrieved results from vectorDB we can rank them and only send the top K to the LLM model as surrounding context. This allows the LLM to have limited information and provide targeted answer. Ranking can be accomplished through cross-encoder. A cross-encoder is a neural network which takes in the user query along with retrieved documents (one document at a time) and outputs a score.
+
+		Why not use an LLM for reranking?
+
+		You could, but cross-encoders are ~100x faster and specifically trained for relevance scoring. An LLM would be overkill for just outputting a single relevance score.
 
 Alternative to PCA is UMAP
 
